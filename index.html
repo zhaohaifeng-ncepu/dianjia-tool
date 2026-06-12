@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>单一制/两部制电价方式下输配电费测算比对及定价策略辅助选择工具</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Microsoft YaHei", "PingFang SC", sans-serif;
+    --bg: #f8f9fb;
+    --surface: #ffffff;
+    --surface-hover: #f4f5f7;
+    --text: #1d1f27;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
+    --border-light: #f3f4f6;
+    --blue-50: #eff6ff;
+    --blue-100: #dbeafe;
+    --blue-500: #3b82f6;
+    --blue-600: #2563eb;
+    --blue-700: #1d4ed8;
+    --emerald-50: #ecfdf5;
+    --emerald-100: #d1fae5;
+    --emerald-500: #10b981;
+    --emerald-600: #059669;
+    --emerald-700: #047857;
+    --amber-50: #fffbeb;
+    --amber-500: #f59e0b;
+    --amber-600: #d97706;
+    --amber-700: #b45309;
+    --rose-50: #fff1f2;
+    --rose-500: #f43f5e;
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-400: #94a3b8;
+    --radius-sm: 6px;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, #1e3a5f 0%, #1a56a8 50%, #2563eb 100%);
+    color: #fff;
+    padding: 2.5rem 2rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L55 30 L30 55 L5 30Z' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3C/svg%3E") repeat;
+    opacity: 0.5;
+  }
+  .hero-content { position: relative; z-index: 1; }
+  .hero-title { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 6px; }
+  .hero-sub { font-size: 13px; opacity: 0.75; font-weight: 400; }
+
+  .main-wrap { max-width: 740px; margin: -1rem auto 0; padding: 0 1rem 3rem; position: relative; z-index: 2; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s;
+  }
+  .card:hover { box-shadow: var(--shadow); }
+
+  .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .step-badge {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0;
+  }
+  .badge-input { background: var(--blue-500); }
+  .badge-step1 { background: var(--emerald-500); }
+  .badge-step2 { background: var(--amber-500); }
+  .badge-chart { background: #6366f1; }
+
+  .card-title { font-size: 15px; font-weight: 600; }
+  .card-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 1rem; }
+
+  .input-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+  .input-group label {
+    font-size: 11px; font-weight: 500; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .input-group select, .input-group input {
+    width: 100%; padding: 10px 12px; font-size: 14px; font-family: var(--font-sans);
+    border: 1.5px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); color: var(--text);
+    outline: none; transition: all 0.15s;
+    font-weight: 500;
+  }
+  .input-group select:hover, .input-group input:hover { border-color: var(--slate-400); }
+  .input-group select:focus, .input-group input:focus {
+    border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+  }
+  .input-group input[type=number] { font-variant-numeric: tabular-nums; }
+
+  .price-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .price-tag {
+    font-size: 11px; font-weight: 500; padding: 5px 10px;
+    border-radius: 20px; background: var(--slate-100); color: var(--text-secondary);
+  }
+  .price-tag .val { color: var(--text); font-weight: 600; margin-left: 2px; }
+
+  .alert {
+    border-radius: var(--radius); padding: 10px 14px; font-size: 12px;
+    display: flex; align-items: center; gap: 8px; line-height: 1.5;
+  }
+  .alert::before {
+    content: ''; width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;
+  }
+  .alert-qualify {
+    background: var(--emerald-50); color: var(--emerald-700); border: 1px solid var(--emerald-100);
+  }
+  .alert-qualify::before {
+    background: var(--emerald-500); color: #fff; content: '✓';
+    display: flex; align-items: center; justify-content: center;
+  }
+  .alert-notqualify {
+    background: var(--slate-50); color: var(--text-secondary); border: 1px solid var(--border);
+  }
+  .alert-notqualify::before {
+    background: var(--slate-400); color: #fff; content: 'i';
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .vs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .vs-card {
+    border-radius: var(--radius); padding: 16px 18px;
+    border: 1.5px solid var(--border); background: var(--surface);
+    position: relative; transition: all 0.25s;
+  }
+  .vs-card.winner {
+    border-color: var(--emerald-500); background: var(--emerald-50);
+    box-shadow: 0 0 0 4px rgba(16,185,129,0.08);
+  }
+  .vs-card .vs-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .vs-card .vs-value { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  .vs-card .vs-detail { font-size: 11px; color: var(--text-muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+  /* 计算过程区块 */
+  .calc-process {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--slate-50);
+    border: 1px solid var(--border-light);
+    font-size: 11.5px;
+    line-height: 1.85;
+    color: var(--text-secondary);
+  }
+  .calc-process .calc-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 1px 0;
+  }
+  .calc-process .calc-label { color: var(--text-muted); flex: 1; min-width: 0; }
+  .calc-process .calc-eq { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: 8px; }
+  .calc-process .calc-divider {
+    border: none; border-top: 1px dashed var(--border); margin: 5px 0;
+  }
+  .calc-process .calc-total-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-top: 3px;
+  }
+  .calc-process .calc-total-label { font-weight: 600; color: var(--text); }
+  .calc-process .calc-total-val { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: 8px; }
+  .calc-process.winner-bg { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.2); }
+
+  .vs-card .win-badge {
+    display: none; position: absolute; top: 12px; right: 14px;
+    font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+    background: var(--emerald-500); color: #fff; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .vs-card.winner .win-badge { display: inline-block; }
+
+  .step1-result { font-size: 13px; font-weight: 500; color: var(--emerald-600); margin-bottom: 2px; }
+
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .result-card { border-radius: var(--radius); padding: 20px; text-align: center; position: relative; overflow: hidden; }
+  .result-single { background: var(--blue-50); border: 1.5px solid var(--blue-100); }
+  .result-double { background: var(--emerald-50); border: 1.5px solid var(--emerald-100); }
+  .result-card .r-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; }
+  .result-card .r-value { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; }
+  .result-card .r-formula { font-size: 11px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+  .result-card .r-badge {
+    position: absolute; top: 10px; right: 12px;
+    font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+  }
+  .badge-recommend { background: var(--emerald-500); color: #fff; }
+  .badge-alt { background: var(--slate-200); color: var(--text-secondary); }
+
+  .recommend {
+    border-radius: var(--radius); padding: 14px 18px; margin-top: 14px;
+    font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+  }
+  .recommend::before {
+    content: ''; width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 11px;
+  }
+  .rec-double { background: var(--emerald-50); color: var(--emerald-700); border: 1px solid var(--emerald-100); }
+  .rec-double::before { background: var(--emerald-500); color: #fff; content: '✓'; }
+  .rec-single { background: var(--blue-50); color: var(--blue-700); border: 1px solid var(--blue-100); }
+  .rec-single::before { background: var(--blue-500); color: #fff; content: '✓'; }
+  .rec-equal { background: var(--slate-50); color: var(--text-secondary); border: 1px solid var(--border); }
+  .rec-equal::before { background: var(--slate-400); color: #fff; content: '='; font-weight: 700; }
+
+  .chart-card { overflow: visible; }
+  .chart-legend { display: flex; gap: 24px; margin-bottom: 12px; font-size: 12px; }
+  .chart-legend-item { display: flex; align-items: center; gap: 6px; }
+  .chart-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .chart-container { position: relative; width: 100%; height: 280px; }
+
+  .footnote {
+    font-size: 12px; color: var(--text-secondary); text-align: center;
+    margin-top: 0.5rem; padding-bottom: 1.5rem; line-height: 1.8;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-in { animation: fadeUp 0.3s ease-out; }
+
+  @media (max-width: 640px) {
+    .input-grid { grid-template-columns: 1fr 1fr; }
+    .vs-grid { grid-template-columns: 1fr; }
+    .result-grid { grid-template-columns: 1fr; }
+    .hero { padding: 1.75rem 1rem 1.5rem; }
+    .hero-title { font-size: 18px; }
+    .main-wrap { padding: 0 0.5rem 2rem; }
+    .card { padding: 1rem; }
+    .result-card .r-value { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <h1 class="hero-title">单一制/两部制电价方式下输配电费测算比对及定价策略辅助选择工具</h1>
+  </div>
+</div>
+
+<div class="main-wrap">
+
+  <!-- 适用范围 -->
+  <div class="scope-bar" style="background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--radius);padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--blue-700);text-align:center;line-height:1.7;">
+    <b>适用范围：</b>用电容量100千伏安-315千伏安之间的工商业用户；容量315千伏安及以上执行单一制电价的存量工商业用户
+  </div>
+
+  <!-- 输入参数 -->
+  <div class="card animate-in">
+    <div class="card-header">
+      <span class="step-badge badge-input">1</span>
+      <span class="card-title">输入参数</span>
+    </div>
+    <p class="card-desc">根据实际情况填写以下四项，所有结果实时自动更新</p>
+
+    <div class="input-grid">
+      <div class="input-group">
+        <label>接入电压等级</label>
+        <select id="voltage">
+          <option value="1to10">1~10（20）千伏</option>
+          <option value="35">35千伏</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>变压器容量</label>
+        <input type="number" id="capacity" value="200" min="100" step="1" placeholder="kVA">
+      </div>
+      <div class="input-group">
+        <label>实际最大需量</label>
+        <input type="number" id="demandVal" value="120" min="0" step="1" placeholder="kW">
+      </div>
+      <div class="input-group">
+        <label>月用电量</label>
+        <input type="number" id="energy" value="30000" min="0" step="100" placeholder="kWh">
+      </div>
+    </div>
+
+    <div class="price-tags" id="rateBar"></div>
+    <div id="qualityAlert"></div>
+  </div>
+
+  <!-- 第一步 -->
+  <div class="card animate-in">
+    <div class="card-header">
+      <span class="step-badge badge-step1">2</span>
+      <span class="card-title">第一步：容/需量方式基本电费对比</span>
+    </div>
+    <p class="card-desc">根据当月每千伏安用电量确定需量电价标准，对比按容量计收与按需量计收的基本电费金额，自动选出更低方案</p>
+
+    <div class="vs-grid">
+      <div id="capacityCard" class="vs-card">
+        <span class="win-badge">更优</span>
+        <div class="vs-label">按容量计基本电费</div>
+        <div class="vs-value" id="capacityBasicCost">—</div>
+        <div class="vs-detail" id="capacityDetail"></div>
+        <div class="calc-process" id="capacityCalcProcess"></div>
+      </div>
+      <div id="demandCard" class="vs-card">
+        <span class="win-badge">更优</span>
+        <div class="vs-label">按需量计基本电费</div>
+        <div class="vs-value" id="demandBasicCost">—</div>
+        <div class="vs-detail" id="demandDetail"></div>
+        <div class="calc-process" id="demandCalcProcess"></div>
+      </div>
+    </div>
+
+    <div class="step1-result" id="step1Result"></div>
+  </div>
+
+  <!-- 第二步 -->
+  <div class="card animate-in">
+    <div class="card-header">
+      <span class="step-badge badge-step2">3</span>
+      <span class="card-title">第二步：总输配电费对比</span>
+    </div>
+    <p class="card-desc">用最优基本电费计收方式计算两部制总费用，与单一制比较后给出最终建议</p>
+
+    <div class="result-grid">
+      <div id="singleResultCard" class="result-card result-single">
+        <div class="r-badge badge-alt">单一制</div>
+        <div class="r-label">单一制输配电费</div>
+        <div class="r-value" id="singleCost">—</div>
+        <div class="r-formula" id="singleNote"></div>
+      </div>
+      <div id="doubleResultCard" class="result-card result-double">
+        <div class="r-badge badge-recommend" style="display:none" id="recoBadge">推荐</div>
+        <div class="r-label">最优两部制输配电费</div>
+        <div class="r-value" id="bestDoubleCost">—</div>
+        <div class="r-formula" id="doubleNote"></div>
+      </div>
+    </div>
+
+    <div class="step2-breakdown" id="step2Breakdown" style="margin-top:14px; padding:12px 16px; border-radius:var(--radius); background:var(--slate-50); border:1px solid var(--border); display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:13px;">
+      <div style="text-align:center;">
+        <div style="color:var(--text-secondary); font-size:11px; margin-bottom:4px;">两部制度电费减少额</div>
+        <div style="font-weight:700; color:var(--emerald-600);" id="energySaving">—</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">较单一制电度电价降低</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="color:var(--text-secondary); font-size:11px; margin-bottom:4px;">基本电费增加额</div>
+        <div style="font-weight:700; color:var(--rose-500);" id="basicIncrease">—</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">单一制无基本电费</div>
+      </div>
+    </div>
+
+    <div id="finalRecommend" class="recommend rec-equal"></div>
+  </div>
+
+  <!-- 趋势图 -->
+  <div class="card chart-card animate-in">
+    <div class="card-header">
+      <span class="step-badge badge-chart">4</span>
+      <span class="card-title">盈亏平衡趋势分析</span>
+    </div>
+    <p class="card-desc">随月用电量变化的费用走势。实心圆点标记当前用电量位置，需量电价九折门槛（260度/kVA）处会产生不连续拐点</p>
+
+    <div class="chart-legend">
+      <div class="chart-legend-item">
+        <span class="chart-dot" style="background:#2563eb"></span>
+        <span>单一制</span>
+      </div>
+      <div class="chart-legend-item">
+        <span class="chart-dot" style="background:#10b981"></span>
+        <span>最优两部制</span>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="breakChart" role="img" aria-label="单一制与最优两部制输配电费随月用电量变化趋势图">费用趋势对比图</canvas>
+    </div>
+  </div>
+
+  <p class="footnote">政策依据：宁夏回族自治区第三监管周期输配电价及有关事项的通知（宁发改价格〔2023〕354号）<br>© 国网银川供电公司营销部 赵海峰</p>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+var RATES = {
+  '1to10': { single: 0.1646, doubleEnergy: 0.0920, capacity: 18, demand: 28.8, label: '1~10（20）千伏' },
+  '35':    { single: 0.1446, doubleEnergy: 0.0769, capacity: 18, demand: 28.8, label: '35千伏' }
+};
+var chartInst = null;
+
+function fmt(n) {
+  return n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function update() {
+  var voltage = document.getElementById('voltage').value;
+  var r = RATES[voltage];
+  var cap = Math.max(100, parseFloat(document.getElementById('capacity').value) || 200);
+  var demandKw = parseFloat(document.getElementById('demandVal').value) || 0;
+  var energy = parseFloat(document.getElementById('energy').value) || 0;
+  var kwhPerKva = cap > 0 ? energy / cap : 0;
+  var discounted = kwhPerKva >= 260;
+  var demandRate = discounted ? +(r.demand * 0.9).toFixed(2) : r.demand;
+
+  document.getElementById('rateBar').innerHTML =
+    '<span class="price-tag">单一制电度<span class="val">' + r.single + '</span></span>' +
+    '<span class="price-tag">两部制电度<span class="val">' + r.doubleEnergy + '</span></span>' +
+    '<span class="price-tag">容量<span class="val">' + r.capacity + '</span> 元/kVA·月</span>' +
+    '<span class="price-tag">需量<span class="val">' + r.demand + '</span> 元/kW·月</span>';
+
+  var alertBox = document.getElementById('qualityAlert');
+  if (discounted) {
+    alertBox.className = 'alert alert-qualify';
+    alertBox.innerHTML = '<span>当月每千伏安用电量 <b>' + kwhPerKva.toFixed(1) + ' 度</b>（≥ 260），需量电价按标准 ' + r.demand.toFixed(2) + ' 元的 <b>90%</b> 计收，即 <b>' + demandRate.toFixed(2) + ' 元/千瓦·月</b></span>';
+  } else {
+    alertBox.className = 'alert alert-notqualify';
+    alertBox.innerHTML = '<span>当月每千伏安用电量 <b>' + kwhPerKva.toFixed(1) + ' 度</b>，未达 260 度门槛，需量电价按标准 <b>' + r.demand.toFixed(2) + ' 元/千瓦·月</b> 执行</span>';
+  }
+
+  var capacityBasic = cap * r.capacity;
+  var demandBasic = demandKw > 0 ? demandKw * demandRate : 0;
+
+  document.getElementById('capacityBasicCost').textContent = '¥ ' + fmt(capacityBasic);
+  document.getElementById('capacityDetail').textContent = cap + ' kVA × ¥' + r.capacity + ' = ¥' + fmt(capacityBasic);
+
+  document.getElementById('demandBasicCost').textContent = '¥ ' + fmt(demandBasic);
+  document.getElementById('demandDetail').textContent = demandKw + ' kW × ¥' + demandRate.toFixed(2) + (discounted ? ' (九折)' : '') + ' = ¥' + fmt(demandBasic);
+
+  // 容量方式计算过程
+  var capProc = document.getElementById('capacityCalcProcess');
+  capProc.innerHTML =
+    '<div class="calc-row"><span class="calc-label">变压器容量</span><span class="calc-eq">' + cap + ' kVA</span></div>' +
+    '<div class="calc-row"><span class="calc-label">容量电价标准</span><span class="calc-eq">¥' + r.capacity + ' 元/kVA·月</span></div>' +
+    '<hr class="calc-divider">' +
+    '<div class="calc-total-row"><span class="calc-total-label">基本电费</span><span class="calc-total-val" style="color:var(--blue-600)">' +
+    cap + ' × ' + r.capacity + ' = <b>¥' + fmt(capacityBasic) + '</b></span></div>';
+
+  // 需量方式计算过程
+  var demProc = document.getElementById('demandCalcProcess');
+  if (demandKw <= 0) {
+    demProc.innerHTML = '<div style="color:var(--text-muted);font-size:11px;">请输入实际最大需量</div>';
+  } else {
+    var discountNote = discounted
+      ? '<div class="calc-row"><span class="calc-label">需量电价折扣（≥260度/kVA）</span><span class="calc-eq">× 90%</span></div>' +
+        '<div class="calc-row"><span class="calc-label">折后需量电价</span><span class="calc-eq" style="color:var(--emerald-600)">¥' + demandRate.toFixed(2) + ' 元/kW·月</span></div>'
+      : '<div class="calc-row"><span class="calc-label">需量电价标准（未达九折门槛）</span><span class="calc-eq">¥' + r.demand + ' 元/kW·月</span></div>';
+    demProc.innerHTML =
+      '<div class="calc-row"><span class="calc-label">实际最大需量</span><span class="calc-eq">' + demandKw + ' kW</span></div>' +
+      '<div class="calc-row"><span class="calc-label">需量电价（标准）</span><span class="calc-eq">¥' + r.demand + ' 元/kW·月</span></div>' +
+      discountNote +
+      '<hr class="calc-divider">' +
+      '<div class="calc-total-row"><span class="calc-total-label">基本电费</span><span class="calc-total-val" style="color:var(--emerald-700)">' +
+      demandKw + ' × ' + demandRate.toFixed(2) + ' = <b>¥' + fmt(demandBasic) + '</b></span></div>';
+  }
+
+  var capCard = document.getElementById('capacityCard');
+  var demCard = document.getElementById('demandCard');
+  var step1R = document.getElementById('step1Result');
+  var bestMethod, bestBasic;
+
+  if (demandKw <= 0) {
+    capCard.className = 'vs-card winner'; demCard.className = 'vs-card';
+    document.getElementById('capacityCalcProcess').className = 'calc-process winner-bg';
+    document.getElementById('demandCalcProcess').className = 'calc-process';
+    step1R.innerHTML = '未输入需量数据，默认选用 <b>按容量计收</b>';
+    bestMethod = 'capacity'; bestBasic = capacityBasic;
+  } else if (capacityBasic <= demandBasic) {
+    capCard.className = 'vs-card winner'; demCard.className = 'vs-card';
+    document.getElementById('capacityCalcProcess').className = 'calc-process winner-bg';
+    document.getElementById('demandCalcProcess').className = 'calc-process';
+    step1R.innerHTML = '按容量计 ¥' + fmt(capacityBasic) + ' &lt; 按需量计 ¥' + fmt(demandBasic) + '，选用 <b>按容量计收</b>';
+    bestMethod = 'capacity'; bestBasic = capacityBasic;
+  } else {
+    capCard.className = 'vs-card'; demCard.className = 'vs-card winner';
+    document.getElementById('capacityCalcProcess').className = 'calc-process';
+    document.getElementById('demandCalcProcess').className = 'calc-process winner-bg';
+    step1R.innerHTML = '按需量计 ¥' + fmt(demandBasic) + ' &lt; 按容量计 ¥' + fmt(capacityBasic) + '，选用 <b>按需量计收</b>';
+    bestMethod = 'demand'; bestBasic = demandBasic;
+  }
+
+  var singleCost = energy * r.single;
+  var doubleCost = energy * r.doubleEnergy + bestBasic;
+
+  document.getElementById('singleCost').textContent = '¥ ' + fmt(singleCost);
+  document.getElementById('singleNote').textContent = energy.toLocaleString() + ' kWh × ¥' + r.single + ' = ¥' + fmt(singleCost);
+
+  document.getElementById('bestDoubleCost').textContent = '¥ ' + fmt(doubleCost);
+  document.getElementById('doubleNote').textContent = energy.toLocaleString() + ' kWh × ¥' + r.doubleEnergy + ' + ¥' + fmt(bestBasic) + ' = ¥' + fmt(doubleCost);
+
+  var energySaving = energy * (r.single - r.doubleEnergy);
+  document.getElementById('energySaving').textContent = '¥ ' + fmt(energySaving);
+  document.getElementById('energySaving').nextElementSibling.textContent =
+    '度电价 ' + r.single.toFixed(4) + ' → ' + r.doubleEnergy.toFixed(4) + '，降低 ¥' + (r.single - r.doubleEnergy).toFixed(4) + '/kWh';
+
+  document.getElementById('basicIncrease').textContent = '¥ ' + fmt(bestBasic);
+  document.getElementById('basicIncrease').nextElementSibling.textContent =
+    bestMethod === 'capacity' ? cap + ' kVA × ¥' + r.capacity + '/kVA' : demandKw + ' kW × ¥' + demandRate.toFixed(2) + '/kW';
+
+  var diff = singleCost - doubleCost;
+  var rec = document.getElementById('finalRecommend');
+  var recoBadge = document.getElementById('recoBadge');
+  var singleCard = document.getElementById('singleResultCard');
+  var doubleCard = document.getElementById('doubleResultCard');
+
+  if (Math.abs(diff) < 1) {
+    rec.className = 'recommend rec-equal';
+    rec.textContent = '两种方案费用基本持平，可按管理便利性选择';
+    recoBadge.style.display = 'none';
+    singleCard.querySelector('.r-badge').className = 'r-badge badge-alt';
+    doubleCard.querySelector('.r-badge').className = 'r-badge badge-alt';
+  } else if (diff > 0) {
+    rec.className = 'recommend rec-double';
+    rec.textContent = '两部制（' + bestMethod + '）更优，每月可节省 ¥' + fmt(diff);
+    recoBadge.style.display = 'inline-block';
+    singleCard.querySelector('.r-badge').className = 'r-badge badge-alt';
+    doubleCard.querySelector('.r-badge').className = 'r-badge badge-recommend';
+  } else {
+    rec.className = 'recommend rec-single';
+    rec.textContent = '单一制更优，每月可节省 ¥' + fmt(-diff);
+    recoBadge.style.display = 'none';
+    singleCard.querySelector('.r-badge').className = 'r-badge badge-recommend';
+    doubleCard.querySelector('.r-badge').className = 'r-badge badge-alt';
+  }
+
+  drawChart(voltage, cap, demandKw, energy);
+}
+
+function drawChart(voltage, cap, demandKw, energy) {
+  var r = RATES[voltage];
+  var maxE = Math.max(energy * 2, 60000);
+  var steps = 60;
+  var labels = [], singleData = [], doubleData = [];
+  var singleArea = [], doubleArea = [];
+
+  for (var i = 0; i <= steps; i++) {
+    var e = Math.round((maxE / steps) * i);
+    labels.push((e / 10000).toFixed(1));
+    singleData.push(+(e * r.single).toFixed(2));
+
+    var kpk = cap > 0 ? e / cap : 0;
+    var dr = kpk >= 260 ? +(r.demand * 0.9).toFixed(2) : r.demand;
+    var cb = cap * r.capacity;
+    var db = demandKw > 0 ? demandKw * dr : 0;
+    doubleData.push(+(e * r.doubleEnergy + Math.min(cb, db || cb)).toFixed(2));
+  }
+
+  var ctx = document.getElementById('breakChart').getContext('2d');
+  if (chartInst) chartInst.destroy();
+  var curIdx = Math.round((energy / maxE) * steps);
+
+  var gradBlue = ctx.createLinearGradient(0, 0, 0, 280);
+  gradBlue.addColorStop(0, 'rgba(37,99,235,0.12)');
+  gradBlue.addColorStop(1, 'rgba(37,99,235,0.0)');
+
+  var gradGreen = ctx.createLinearGradient(0, 0, 0, 280);
+  gradGreen.addColorStop(0, 'rgba(16,185,129,0.12)');
+  gradGreen.addColorStop(1, 'rgba(16,185,129,0.0)');
+
+  chartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: '单一制',
+          data: singleData,
+          borderColor: '#2563eb',
+          backgroundColor: gradBlue,
+          borderWidth: 2.5,
+          fill: true,
+          pointRadius: function(ctx) { return ctx.dataIndex === curIdx ? 7 : 0; },
+          pointBackgroundColor: '#2563eb',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 3,
+          pointHoverRadius: 8,
+          tension: 0.35
+        },
+        {
+          label: '最优两部制',
+          data: doubleData,
+          borderColor: '#10b981',
+          backgroundColor: gradGreen,
+          borderWidth: 2.5,
+          fill: true,
+          pointRadius: function(ctx) { return ctx.dataIndex === curIdx ? 7 : 0; },
+          pointBackgroundColor: '#10b981',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 3,
+          pointHoverRadius: 8,
+          tension: 0.35
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1d1f27',
+          titleColor: '#fff',
+          bodyColor: '#e5e7eb',
+          borderColor: 'transparent',
+          borderWidth: 0,
+          cornerRadius: 8,
+          titleFont: { size: 12, weight: '600' },
+          bodyFont: { size: 13 },
+          padding: 12,
+          displayColors: true,
+          boxPadding: 4,
+          callbacks: {
+            label: function(ctx) {
+              return ctx.dataset.label + ': ¥' + ctx.parsed.y.toLocaleString('zh-CN', { minimumFractionDigits: 2 });
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: '月用电量（万度）', font: { size: 11, weight: '500' }, color: '#6b7280' },
+          ticks: { autoSkip: true, maxTicksLimit: 8, font: { size: 11 }, color: '#9ca3af' },
+          grid: { color: '#f3f4f6', drawBorder: false }
+        },
+        y: {
+          title: { display: true, text: '输配电费（元）', font: { size: 11, weight: '500' }, color: '#6b7280' },
+          ticks: {
+            font: { size: 11 },
+            color: '#9ca3af',
+            callback: function(v) { return v >= 10000 ? (v/10000).toFixed(1) + '万' : v.toLocaleString(); }
+          },
+          grid: { color: '#f3f4f6', drawBorder: false }
+        }
+      }
+    }
+  });
+}
+
+document.getElementById('voltage').addEventListener('change', update);
+document.getElementById('capacity').addEventListener('input', update);
+document.getElementById('demandVal').addEventListener('input', update);
+document.getElementById('energy').addEventListener('input', update);
+
+update();
+</script>
+
+</body>
+</html>
