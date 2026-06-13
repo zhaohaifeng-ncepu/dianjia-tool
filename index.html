@@ -534,7 +534,7 @@ function update() {
     doubleCard.querySelector('.r-badge').className = 'r-badge badge-alt';
   } else if (diff > 0) {
     rec.className = 'recommend rec-double';
-    rec.textContent = '两部制（' + bestMethod + '）更优，每月可节省 ¥' + fmt(diff);
+    rec.textContent = '两部制（按' + (bestMethod === 'capacity' ? '容量' : '需量') + '计收）更优，每月可节省 ¥' + fmt(diff);
     recoBadge.style.display = 'inline-block';
     singleCard.querySelector('.r-badge').className = 'r-badge badge-alt';
     doubleCard.querySelector('.r-badge').className = 'r-badge badge-recommend';
