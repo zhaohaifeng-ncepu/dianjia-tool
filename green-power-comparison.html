@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>公网单一供电 vs 绿电直连模式用电成本测算比对工具</title>
+<style>
+:root {
+  --primary: #1a73e8;
+  --primary-light: #e8f0fe;
+  --primary-dark: #1557b0;
+  --green: #188038;
+  --green-light: #e6f4ea;
+  --red: #d93025;
+  --red-light: #fce8e6;
+  --gray: #5f6368;
+  --border: #dadce0;
+  --bg: #f8f9fa;
+  --card: #ffffff;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: #202124;
+  line-height: 1.6;
+  padding: 0;
+}
+
+.header {
+  background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
+  color: #fff;
+  padding: 24px 20px;
+  text-align: center;
+}
+.header h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 6px; }
+.header p { font-size: 0.9rem; opacity: 0.9; }
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 输入区 */
+.input-section {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--primary-light);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .icon { font-size: 1.2rem; }
+
+.param-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+.param-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.param-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray);
+}
+.param-group label .hint { color: #999; font-weight: 400; font-size: 0.8rem; }
+.param-group input,
+.param-group select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+}
+.param-group input:focus,
+.param-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+}
+.param-group input:disabled,
+.param-group select:disabled {
+  background: #f1f3f4;
+  color: #aaa;
+}
+
+.charge-method-group {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 8px 0;
+}
+.charge-method-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray);
+  white-space: nowrap;
+}
+.charge-method-group .radio-inline {
+  display: flex;
+  gap: 16px;
+}
+.charge-method-group .radio-inline label {
+  font-weight: 400;
+  color: #202124;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.charge-method-group .radio-inline input[type="radio"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.standard-hint {
+  font-size: 0.8rem;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* 结果区 */
+.results-section {
+  display: grid;
+  gap: 20px;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.summary-card {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  text-align: center;
+  border: 2px solid transparent;
+  transition: all 0.3s;
+  position: relative;
+}
+.summary-card.lowest { border-color: var(--green); background: var(--green-light); }
+.summary-card.highest { border-color: var(--red); background: var(--red-light); }
+.summary-card .tag {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  padding: 2px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.summary-card.lowest .tag { background: var(--green); color: #fff; }
+.summary-card.highest .tag { background: var(--red); color: #fff; }
+.summary-card .mode-name {
+  font-size: 0.9rem;
+  color: var(--gray);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.summary-card .amount {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #202124;
+}
+.summary-card .amount .unit { font-size: 0.9rem; font-weight: 400; }
+.summary-card .savings {
+  font-size: 0.8rem;
+  color: var(--gray);
+  margin-top: 6px;
+}
+.summary-card.lowest .savings { color: var(--green); font-weight: 600; }
+
+.summary-card .calc-toggle {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.summary-card .calc-detail {
+  text-align: left;
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--gray);
+  line-height: 1.8;
+  display: none;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.summary-card .calc-detail.show { display: block; }
+.summary-card .calc-detail .calc-line {
+  padding: 2px 0;
+}
+.summary-card .calc-detail .calc-indent { padding-left: 12px; }
+.summary-card .calc-detail .calc-total {
+  font-weight: 600;
+  color: #202124;
+  border-top: 1px dashed var(--border);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+.summary-card .calc-detail .calc-num { font-variant-numeric: tabular-nums; }
+
+/* 明细表 */
+.detail-section {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  overflow-x: auto;
+}
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 750px;
+}
+.detail-table th,
+.detail-table td {
+  padding: 10px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+.detail-table th {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 600;
+  text-align: center;
+}
+.detail-table th:first-child,
+.detail-table td:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+.detail-table .subtotal-row td {
+  background: #f8f9fa;
+  font-weight: 600;
+}
+.detail-table .total-row td {
+  background: var(--primary-light);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--primary-dark);
+}
+.detail-table .total-row.lowest td { background: var(--green-light); color: var(--green); }
+.detail-table td:nth-child(n+2) { font-variant-numeric: tabular-nums; }
+
+/* 中间量展示 */
+.intermediate {
+  background: var(--primary-light);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 0.85rem;
+}
+.intermediate .item { color: var(--gray); }
+.intermediate .item strong { color: var(--primary-dark); }
+.intermediate .badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.intermediate .badge.active { background: var(--green); color: #fff; }
+.intermediate .badge.inactive { background: #bbb; color: #fff; }
+
+/* 柱状图 */
+.chart-section {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.chart-grid .chart-box { text-align: center; }
+.chart-grid .chart-box h4 {
+  font-size: 0.9rem;
+  color: var(--primary-dark);
+  margin-bottom: 8px;
+}
+.chart-grid .chart-box canvas {
+  max-width: 100%;
+  height: auto;
+}
+@media (max-width: 768px) {
+  .chart-grid { grid-template-columns: 1fr; }
+}
+
+/* 底部参数参考 */
+.reference-section {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-top: 20px;
+}
+.reference-section h3 {
+  font-size: 1rem;
+  color: var(--primary-dark);
+  margin-bottom: 12px;
+}
+.reference-section table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.reference-section th,
+.reference-section td {
+  padding: 8px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.reference-section th { background: var(--primary-light); color: var(--primary-dark); }
+.reference-section .note {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--gray);
+  line-height: 1.8;
+}
+
+@media (max-width: 768px) {
+  .summary-cards { grid-template-columns: 1fr; }
+  .header h1 { font-size: 1.2rem; }
+  .param-grid { grid-template-columns: 1fr; }
+  .charge-method-group { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>公网单一供电 vs 绿电直连模式用电成本测算比对工具</h1>
+  <p>基于宁夏第三监管周期输配电价标准 · 实时计算</p>
+</div>
+
+<div class="container">
+
+  <!-- 基本参数 -->
+  <div class="input-section">
+    <div class="section-title"><span class="icon">⚙</span> 基本参数</div>
+    <div class="param-grid">
+      <div class="param-group">
+        <label>接入公共电网电压等级</label>
+        <select id="voltage" onchange="updateStandards()">
+          <option value="10">10千伏</option>
+          <option value="35" selected>35千伏</option>
+          <option value="110">110千伏</option>
+          <option value="220">220千伏及以上</option>
+        </select>
+        <span class="standard-hint" id="voltageHint"></span>
+      </div>
+      <div class="param-group">
+        <label>月度用电量 <span class="hint">(千瓦时)</span></label>
+        <input type="number" id="totalUsage" value="1000000" step="1000" min="0" oninput="calculate()">
+      </div>
+      <div class="param-group">
+        <label>系统运行费标准 <span class="hint">(元/千瓦时)</span></label>
+        <input type="number" id="systemFee" value="0.05" step="0.0001" min="0" oninput="calculate()">
+      </div>
+    </div>
+  </div>
+
+  <!-- 公网单一供电模式核心参数 -->
+  <div class="input-section">
+    <div class="section-title"><span class="icon">🔌</span> 公网单一供电模式核心参数</div>
+    <div class="param-grid">
+      <div class="param-group">
+        <label>变压器容量 <span class="hint">(千伏安)</span></label>
+        <input type="number" id="gridTransCapacity" value="2000" step="100" min="0" oninput="calculate()">
+      </div>
+      <div class="param-group">
+        <label>月度最大需量 <span class="hint">(千瓦)</span></label>
+        <input type="number" id="gridMaxDemand" value="1500" step="100" min="0" oninput="calculate()">
+      </div>
+      <div class="param-group" style="grid-column: 1 / -1;">
+        <div class="charge-method-group">
+          <label>容（需）量电费计收方式</label>
+          <div class="radio-inline">
+            <label><input type="radio" name="gridChargeMethod" value="capacity" checked onchange="calculate()"> 按变压器容量</label>
+            <label><input type="radio" name="gridChargeMethod" value="demand" onchange="calculate()"> 按最大需量</label>
+          </div>
+        </div>
+      </div>
+      <div class="param-group">
+        <label>上网电价标准 <span class="hint">(元/千瓦时)</span></label>
+        <input type="number" id="gridPrice" value="0.35" step="0.0001" min="0" oninput="calculate()">
+      </div>
+    </div>
+  </div>
+
+  <!-- 绿电直连模式核心参数 -->
+  <div class="input-section">
+    <div class="section-title"><span class="icon">🌿</span> 绿电直连模式核心参数</div>
+    <div class="param-grid">
+      <div class="param-group">
+        <label>接入公共电网变压器容量 <span class="hint">(千伏安)</span></label>
+        <input type="number" id="greenTransCapacity" value="2000" step="100" min="0" oninput="calculate()">
+      </div>
+      <div class="param-group">
+        <label>月度最大需量 <span class="hint">(千瓦，按需量方式时启用)</span></label>
+        <input type="number" id="greenMaxDemand" value="1500" step="100" min="0" oninput="calculate()">
+      </div>
+      <div class="param-group" style="grid-column: 1 / -1;">
+        <div class="charge-method-group">
+          <label>容（需）量电费计收方式</label>
+          <div class="radio-inline">
+            <label><input type="radio" name="greenChargeMethod" value="capacity" checked onchange="calculate()"> 按变压器容量</label>
+            <label><input type="radio" name="greenChargeMethod" value="demand" onchange="calculate()"> 按最大需量</label>
+          </div>
+        </div>
+      </div>
+      <div class="param-group">
+        <label>自发自用电量比例 <span class="hint">(%)</span></label>
+        <input type="number" id="selfUseRatio" value="60" step="1" min="0" max="100" oninput="calculate()">
+      </div>
+      <div class="param-group">
+        <label>购电单价 <span class="hint">(元/千瓦时，向项目电源方购电)</span></label>
+        <input type="number" id="selfUsePrice" value="0.25" step="0.0001" min="0" oninput="calculate()">
+      </div>
+    </div>
+  </div>
+
+  <!-- 结果区 -->
+  <div class="results-section">
+
+    <!-- 汇总对比 -->
+    <div class="summary-cards">
+      <div class="summary-card" id="card1">
+        <div class="mode-name">公网单一供电模式</div>
+        <div class="amount"><span id="total1">0.00</span><span class="unit"> 元</span></div>
+        <div class="savings" id="savings1"></div>
+        <div class="calc-toggle" id="toggle1" onclick="toggleCalc(1)">展开计算过程 ▼</div>
+        <div class="calc-detail" id="calc1"></div>
+      </div>
+      <div class="summary-card" id="card2">
+        <div class="mode-name">绿电直连方式一<br><small style="font-size:0.78rem;color:#999">按容需量缴纳输配电费</small></div>
+        <div class="amount"><span id="total2">0.00</span><span class="unit"> 元</span></div>
+        <div class="savings" id="savings2"></div>
+        <div class="calc-toggle" id="toggle2" onclick="toggleCalc(2)">展开计算过程 ▼</div>
+        <div class="calc-detail" id="calc2"></div>
+      </div>
+      <div class="summary-card" id="card3">
+        <div class="mode-name">绿电直连方式二<br><small style="font-size:0.78rem;color:#999">按现行两部制输配电价</small></div>
+        <div class="amount"><span id="total3">0.00</span><span class="unit"> 元</span></div>
+        <div class="savings" id="savings3"></div>
+        <div class="calc-toggle" id="toggle3" onclick="toggleCalc(3)">展开计算过程 ▼</div>
+        <div class="calc-detail" id="calc3"></div>
+      </div>
+    </div>
+
+    <!-- 柱状图对比 -->
+    <div class="chart-section">
+      <div class="section-title"><span class="icon">📈</span> 三种模式电费及度电均价对比</div>
+      <div class="chart-grid">
+        <div class="chart-box">
+          <h4>电费总金额对比（万元）</h4>
+          <canvas id="chartTotal" width="460" height="300"></canvas>
+        </div>
+        <div class="chart-box">
+          <h4>度电均价对比（元/千瓦时）</h4>
+          <canvas id="chartUnit" width="460" height="300"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中间量 -->
+    <div class="intermediate" id="intermediate"></div>
+
+    <!-- 分项明细表 -->
+    <div class="detail-section">
+      <div class="section-title"><span class="icon">📊</span> 分项费用明细</div>
+      <table class="detail-table">
+        <thead>
+          <tr>
+            <th>费用项目</th>
+            <th>公网单一供电</th>
+            <th>绿电直连方式一</th>
+            <th>绿电直连方式二</th>
+          </tr>
+        </thead>
+        <tbody id="detailBody"></tbody>
+      </table>
+    </div>
+
+    <!-- 参数参考 -->
+    <div class="reference-section">
+      <h3>📐 宁夏输配电价标准参考（第三监管周期）</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>电压等级</th>
+            <th>输配电度电价<br>(元/千瓦时)</th>
+            <th>容量电价<br>(元/千伏安·月)</th>
+            <th>需量电价<br>(元/千瓦·月)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>10千伏</td><td>0.092</td><td>18</td><td>28.8</td></tr>
+          <tr><td>35千伏</td><td>0.0769</td><td>18</td><td>28.8</td></tr>
+          <tr><td>110千伏</td><td>0.06</td><td>16</td><td>25.6</td></tr>
+          <tr><td>220千伏及以上</td><td>0.0521</td><td>16</td><td>25.6</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>其他固定参数：</strong>上网环节线损率 2.59%；政府性基金及附加 0.021325 元/千瓦时；平均负荷率 66.38%（方式一专用）；730小时（方式一专用）。<br>
+        <strong>需量电价优惠：</strong>若每月每千伏安用电量超过260千瓦时，需量电价按标准的90%计收。<br>
+        &nbsp;&nbsp;· 公网模式：每千伏安用电量 = 月度用电量 ÷ 变压器容量<br>
+        &nbsp;&nbsp;· 绿电直连模式：每千伏安用电量 = 公网电量 ÷ 接入公共电网变压器容量<br>
+        <strong>绿电直连方式一输配电费：</strong>容（需）量电费 + 输配电度电价标准 × 平均负荷率(66.38%) × 730小时 × 接入公共电网容量。<br>
+        <strong>绿电直连方式二输配电费：</strong>容（需）量电费 + (公网电量 + 自发自用电量) × 输配电度电价。<br>
+        <strong>自发自用电费：</strong>自发自用电量 × 购电单价 + 自发自用电量 × 政府性基金及附加标准(0.021325元/千瓦时)。
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ========== 宁夏标准参数 ==========
+const VOLTAGE_STANDARDS = {
+  10:  { tPrice: 0.092,  capPrice: 18, demPrice: 28.8 },
+  35:  { tPrice: 0.0769, capPrice: 18, demPrice: 28.8 },
+  110: { tPrice: 0.06,   capPrice: 16, demPrice: 25.6 },
+  220: { tPrice: 0.0521, capPrice: 16, demPrice: 25.6 }
+};
+
+const LINE_LOSS_RATE = 0.0259;
+const GOV_FUND = 0.021325;
+const AVG_LOAD_RATE = 0.6638;
+const HOURS_730 = 730;
+const DISCOUNT_THRESHOLD = 260;
+const DISCOUNT_RATE = 0.9;
+
+// ========== 获取输入参数 ==========
+function getInputs() {
+  const v = parseInt(document.getElementById('voltage').value);
+  const std = VOLTAGE_STANDARDS[v];
+  return {
+    voltage: v,
+    std: std,
+    totalUsage: parseFloat(document.getElementById('totalUsage').value) || 0,
+    systemFee: parseFloat(document.getElementById('systemFee').value) || 0,
+    // 公网模式参数
+    gridTransCapacity: parseFloat(document.getElementById('gridTransCapacity').value) || 0,
+    gridMaxDemand: parseFloat(document.getElementById('gridMaxDemand').value) || 0,
+    gridChargeMethod: document.querySelector('input[name="gridChargeMethod"]:checked').value,
+    gridPrice: parseFloat(document.getElementById('gridPrice').value) || 0,
+    // 绿电模式参数
+    greenTransCapacity: parseFloat(document.getElementById('greenTransCapacity').value) || 0,
+    greenMaxDemand: parseFloat(document.getElementById('greenMaxDemand').value) || 0,
+    greenChargeMethod: document.querySelector('input[name="greenChargeMethod"]:checked').value,
+    selfUseRatio: (parseFloat(document.getElementById('selfUseRatio').value) || 0) / 100,
+    selfUsePrice: parseFloat(document.getElementById('selfUsePrice').value) || 0
+  };
+}
+
+// ========== 计算容（需）量电费（通用）==========
+// capacity: 变压器容量（千伏安）
+// maxDemand: 月度最大需量（千瓦）
+// method: 'capacity' | 'demand'
+// perKvaUsage: 每千伏安用电量（用于判断优惠）
+function calcCapacityCharge(method, capacity, maxDemand, std, perKvaUsage) {
+  const hasDiscount = perKvaUsage > DISCOUNT_THRESHOLD;
+
+  if (method === 'capacity') {
+    return {
+      charge: capacity * std.capPrice,
+      hasDiscount: hasDiscount,
+      perKvaUsage: perKvaUsage,
+      appliedDemPrice: null
+    };
+  } else {
+    const demPrice = hasDiscount ? std.demPrice * DISCOUNT_RATE : std.demPrice;
+    return {
+      charge: maxDemand * demPrice,
+      hasDiscount: hasDiscount,
+      perKvaUsage: perKvaUsage,
+      appliedDemPrice: demPrice
+    };
+  }
+}
+
+// ========== 通用公网电费计算 ==========
+function calcGridFees(gridUsage, gridPrice, systemFee) {
+  const onlineFee = gridUsage * gridPrice;
+  const lineLossFee = gridUsage * gridPrice / (1 - LINE_LOSS_RATE) * LINE_LOSS_RATE;
+  const systemFeeAmt = gridUsage * systemFee;
+  const govFund = gridUsage * GOV_FUND;
+  return { onlineFee, lineLossFee, systemFee: systemFeeAmt, govFund };
+}
+
+// ========== 场景一：公网单一供电模式 ==========
+function calcScenario1(inp) {
+  const usage = inp.totalUsage;
+
+  // 公网模式：每kVA用电量 = 月度用电量 / 变压器容量
+  const perKvaUsage = inp.gridTransCapacity > 0 ? usage / inp.gridTransCapacity : 0;
+  const capInfo = calcCapacityCharge(
+    inp.gridChargeMethod, inp.gridTransCapacity, inp.gridMaxDemand,
+    inp.std, perKvaUsage
+  );
+
+  const fees = calcGridFees(usage, inp.gridPrice, inp.systemFee);
+
+  const tPriceFee = usage * inp.std.tPrice;
+  const transmissionFee = tPriceFee + capInfo.charge;
+  const total = fees.onlineFee + fees.lineLossFee + transmissionFee + fees.systemFee + fees.govFund;
+
+  return {
+    onlineFee: fees.onlineFee,
+    lineLossFee: fees.lineLossFee,
+    tPriceFee: tPriceFee,
+    capacityCharge: capInfo.charge,
+    transmissionFee: transmissionFee,
+    systemFee: fees.systemFee,
+    govFund: fees.govFund,
+    gridSubtotal: total,
+    selfUsePurchaseFee: 0,
+    selfUseGovFund: 0,
+    selfUseFee: 0,
+    total: total,
+    perKvaUsage: perKvaUsage,
+    hasDiscount: capInfo.hasDiscount,
+    appliedDemPrice: capInfo.appliedDemPrice
+  };
+}
+
+// ========== 场景二：绿电直连方式一 ==========
+function calcScenario2(inp) {
+  const selfUseUsage = inp.totalUsage * inp.selfUseRatio;
+  const gridUsage = inp.totalUsage - selfUseUsage;
+
+  // 绿电模式：每kVA用电量 = 公网电量 / 接入公共电网变压器容量
+  const perKvaUsage = inp.greenTransCapacity > 0 ? gridUsage / inp.greenTransCapacity : 0;
+  const capInfo = calcCapacityCharge(
+    inp.greenChargeMethod, inp.greenTransCapacity, inp.greenMaxDemand,
+    inp.std, perKvaUsage
+  );
+
+  const fees = calcGridFees(gridUsage, inp.gridPrice, inp.systemFee);
+
+  // 方式一：输配电费 = 容(需)量电费 + 度电价 × 平均负荷率 × 730h × 接入公共电网容量
+  const tPriceFee = inp.std.tPrice * AVG_LOAD_RATE * HOURS_730 * inp.greenTransCapacity;
+  const transmissionFee = capInfo.charge + tPriceFee;
+
+  const gridSubtotal = fees.onlineFee + fees.lineLossFee + transmissionFee + fees.systemFee + fees.govFund;
+
+  // 自发自用电费 = 自发自用电量 × 购电单价 + 自发自用电量 × 政府性基金
+  const selfUsePurchaseFee = selfUseUsage * inp.selfUsePrice;
+  const selfUseGovFund = selfUseUsage * GOV_FUND;
+  const selfUseFee = selfUsePurchaseFee + selfUseGovFund;
+
+  const total = gridSubtotal + selfUseFee;
+
+  return {
+    onlineFee: fees.onlineFee,
+    lineLossFee: fees.lineLossFee,
+    tPriceFee: tPriceFee,
+    capacityCharge: capInfo.charge,
+    transmissionFee: transmissionFee,
+    systemFee: fees.systemFee,
+    govFund: fees.govFund,
+    gridSubtotal: gridSubtotal,
+    selfUsePurchaseFee: selfUsePurchaseFee,
+    selfUseGovFund: selfUseGovFund,
+    selfUseFee: selfUseFee,
+    total: total,
+    perKvaUsage: perKvaUsage,
+    hasDiscount: capInfo.hasDiscount,
+    appliedDemPrice: capInfo.appliedDemPrice
+  };
+}
+
+// ========== 场景三：绿电直连方式二 ==========
+function calcScenario3(inp) {
+  const selfUseUsage = inp.totalUsage * inp.selfUseRatio;
+  const gridUsage = inp.totalUsage - selfUseUsage;
+
+  // 绿电模式：每kVA用电量 = 公网电量 / 接入公共电网变压器容量
+  const perKvaUsage = inp.greenTransCapacity > 0 ? gridUsage / inp.greenTransCapacity : 0;
+  const capInfo = calcCapacityCharge(
+    inp.greenChargeMethod, inp.greenTransCapacity, inp.greenMaxDemand,
+    inp.std, perKvaUsage
+  );
+
+  const fees = calcGridFees(gridUsage, inp.gridPrice, inp.systemFee);
+
+  // 方式二：输配电费 = 容(需)量电费 + (公网电量 + 自发自用电量) × 输配电度电价
+  const tPriceFee = (gridUsage + selfUseUsage) * inp.std.tPrice;
+  const transmissionFee = capInfo.charge + tPriceFee;
+
+  const gridSubtotal = fees.onlineFee + fees.lineLossFee + transmissionFee + fees.systemFee + fees.govFund;
+
+  const selfUsePurchaseFee = selfUseUsage * inp.selfUsePrice;
+  const selfUseGovFund = selfUseUsage * GOV_FUND;
+  const selfUseFee = selfUsePurchaseFee + selfUseGovFund;
+
+  const total = gridSubtotal + selfUseFee;
+
+  return {
+    onlineFee: fees.onlineFee,
+    lineLossFee: fees.lineLossFee,
+    tPriceFee: tPriceFee,
+    capacityCharge: capInfo.charge,
+    transmissionFee: transmissionFee,
+    systemFee: fees.systemFee,
+    govFund: fees.govFund,
+    gridSubtotal: gridSubtotal,
+    selfUsePurchaseFee: selfUsePurchaseFee,
+    selfUseGovFund: selfUseGovFund,
+    selfUseFee: selfUseFee,
+    total: total,
+    perKvaUsage: perKvaUsage,
+    hasDiscount: capInfo.hasDiscount,
+    appliedDemPrice: capInfo.appliedDemPrice
+  };
+}
+
+// ========== 格式化金额 ==========
+function fmt(v) { return v.toFixed(2); }
+
+// ========== 绘制柱状图 ==========
+function drawBarChart(canvasId, labels, values, unit, colorMap) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+
+  // 响应式：按CSS宽度缩放画布
+  const cssW = canvas.clientWidth;
+  if (cssW > 0 && cssW < W) {
+    const scale = cssW / W;
+    canvas.style.height = (H * scale) + 'px';
+  }
+
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { top: 30, right: 20, bottom: 55, left: 80 };
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+
+  const maxVal = Math.max(...values);
+  const yMax = Math.ceil(maxVal * 1.2);
+
+  // Y轴
+  ctx.strokeStyle = '#dadce0';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top);
+  ctx.lineTo(pad.left, pad.top + chartH);
+  ctx.lineTo(pad.left + chartW, pad.top + chartH);
+  ctx.stroke();
+
+  // Y轴刻度
+  ctx.fillStyle = '#5f6368';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'right';
+  const ySteps = 5;
+  for (let i = 0; i <= ySteps; i++) {
+    const y = pad.top + chartH - (chartH * i / ySteps);
+    const v = (yMax * i / ySteps);
+    const yLabel = unit === '万元' ? v.toFixed(2) : (unit === '元' ? v.toFixed(0) : v.toFixed(3));
+    ctx.fillText(yLabel, pad.left - 8, y + 4);
+    if (i > 0) {
+      ctx.strokeStyle = '#f0f0f0';
+      ctx.beginPath();
+      ctx.moveTo(pad.left, y);
+      ctx.lineTo(pad.left + chartW, y);
+      ctx.stroke();
+    }
+  }
+
+  // 柱状图
+  const barCount = values.length;
+  const barGap = 20;
+  const barW = (chartW - barGap * (barCount + 1)) / barCount;
+
+  values.forEach((v, i) => {
+    const barH = (v / yMax) * chartH;
+    const x = pad.left + barGap + i * (barW + barGap);
+    const y = pad.top + chartH - barH;
+
+    // 渐变
+    const grad = ctx.createLinearGradient(x, y, x, pad.top + chartH);
+    const color = colorMap[i];
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, color + '88');
+    ctx.fillStyle = grad;
+    roundRect(ctx, x, y, barW, barH, 6);
+    ctx.fill();
+
+    // 数值标签
+    ctx.fillStyle = '#202124';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    const labelVal = unit === '万元' ? v.toFixed(2) : (unit === '元' ? fmt(v) : v.toFixed(4));
+    ctx.fillText(labelVal, x + barW / 2, y - 6);
+
+    // X轴标签
+    ctx.fillStyle = '#5f6368';
+    ctx.font = '11px sans-serif';
+    const labelLines = labels[i].split('\n');
+    labelLines.forEach((line, li) => {
+      ctx.fillText(line, x + barW / 2, pad.top + chartH + 16 + li * 14);
+    });
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ========== 展开/收起计算过程 ==========
+function toggleCalc(n) {
+  const el = document.getElementById('calc' + n);
+  const tog = document.getElementById('toggle' + n);
+  if (el.classList.contains('show')) {
+    el.classList.remove('show');
+    tog.textContent = '展开计算过程 ▼';
+  } else {
+    el.classList.add('show');
+    tog.textContent = '收起计算过程 ▲';
+  }
+}
+
+// ========== 生成单模式计算过程HTML ==========
+function buildCalcDetail(mode, inp, s) {
+  // mode: 1=公网, 2=绿电方式一, 3=绿电方式二
+  const lines = [];
+  const line = (indent, text) => {
+    const cls = indent ? 'calc-line calc-indent' : 'calc-line';
+    lines.push(`<div class="${cls}">${text}</div>`);
+  };
+
+  if (mode === 1) {
+    // ---- 场景一：公网单一供电 ----
+    const usage = inp.totalUsage;
+    line(0, `<strong>一、上网电费</strong>`);
+    line(1, `用电量 × 上网电价 = ${fmt(usage)} × ${inp.gridPrice} = <span class="calc-num">${fmt(s.onlineFee)} 元</span>`);
+
+    line(0, `<strong>二、上网环节线损费</strong>`);
+    line(1, `用电量 × 上网电价 / (1-2.59%) × 2.59%`);
+    line(1, `= ${fmt(usage)} × ${inp.gridPrice} / 0.9741 × 0.0259 = <span class="calc-num">${fmt(s.lineLossFee)} 元</span>`);
+
+    line(0, `<strong>三、输配电费</strong>`);
+    line(1, `① 输配电度电费 = 用电量 × 度电价 = ${fmt(usage)} × ${inp.std.tPrice} = <span class="calc-num">${fmt(s.tPriceFee)} 元</span>`);
+    // 容需量
+    const gridMethod = inp.gridChargeMethod === 'capacity' ? '按变压器容量' : '按最大需量';
+    line(1, `② 容（需）量电费（${gridMethod}）`);
+    if (inp.gridChargeMethod === 'capacity') {
+      line(1, `= 变压器容量 × 容量电价 = ${inp.gridTransCapacity} × ${inp.std.capPrice} = <span class="calc-num">${fmt(s.capacityCharge)} 元</span>`);
+    } else {
+      const disc = s.hasDiscount ? '（已触发90%优惠：' + inp.std.demPrice + '×0.9=' + fmt(s.appliedDemPrice) + '）' : '（未触发优惠）';
+      line(1, `= 最大需量 × 需量电价${disc}`);
+      line(1, `= ${inp.gridMaxDemand} × ${fmt(s.appliedDemPrice || inp.std.demPrice)} = <span class="calc-num">${fmt(s.capacityCharge)} 元</span>`);
+    }
+    line(1, `输配电费小计 = ${fmt(s.tPriceFee)} + ${fmt(s.capacityCharge)} = <span class="calc-num">${fmt(s.transmissionFee)} 元</span>`);
+
+    line(0, `<strong>四、系统运行费</strong>`);
+    line(1, `= ${fmt(usage)} × ${inp.systemFee} = <span class="calc-num">${fmt(s.systemFee)} 元</span>`);
+
+    line(0, `<strong>五、政府性基金及附加</strong>`);
+    line(1, `= ${fmt(usage)} × 0.021325 = <span class="calc-num">${fmt(s.govFund)} 元</span>`);
+
+    line(0, `<div class="calc-total">电费总金额 = ${fmt(s.onlineFee)} + ${fmt(s.lineLossFee)} + ${fmt(s.transmissionFee)} + ${fmt(s.systemFee)} + ${fmt(s.govFund)} = <span class="calc-num">${fmt(s.total)} 元</span></div>`);
+  }
+
+  if (mode === 2 || mode === 3) {
+    // ---- 绿电直连共用：拆分公网/自发自用 ----
+    const selfUseUsage = inp.totalUsage * inp.selfUseRatio;
+    const gridUsage = inp.totalUsage - selfUseUsage;
+
+    line(0, `<strong>电量拆分</strong>`);
+    line(1, `总用电量：${fmt(inp.totalUsage)} 千瓦时`);
+    line(1, `自发自用电量（${inp.selfUseRatio*100}%）：${fmt(selfUseUsage)} 千瓦时`);
+    line(1, `公网电量：${fmt(gridUsage)} 千瓦时`);
+
+    line(0, `<strong>一、公网电费</strong>`);
+
+    line(1, `① 上网电费 = ${fmt(gridUsage)} × ${inp.gridPrice} = <span class="calc-num">${fmt(s.onlineFee)} 元</span>`);
+
+    line(1, `② 上网环节线损费`);
+    line(1, `= ${fmt(gridUsage)} × ${inp.gridPrice} / 0.9741 × 0.0259 = <span class="calc-num">${fmt(s.lineLossFee)} 元</span>`);
+
+    line(1, `③ 输配电费`);
+    if (mode === 2) {
+      line(1, `方式一：容（需）量电费 + 度电价×平均负荷率×730h×接入容量`);
+      line(1, `固定输配电度电费 = ${inp.std.tPrice} × ${AVG_LOAD_RATE} × ${HOURS_730} × ${inp.greenTransCapacity} = <span class="calc-num">${fmt(s.tPriceFee)} 元</span>`);
+    } else {
+      line(1, `方式二：容（需）量电费 + (公网电量+自发自用电量) × 度电价`);
+      line(1, `输配电度电费 = (${fmt(gridUsage)}+${fmt(selfUseUsage)}) × ${inp.std.tPrice} = <span class="calc-num">${fmt(s.tPriceFee)} 元</span>`);
+    }
+    // 容需量
+    const greenMethod = inp.greenChargeMethod === 'capacity' ? '按变压器容量' : '按最大需量';
+    line(1, `容（需）量电费（${greenMethod}）`);
+    if (inp.greenChargeMethod === 'capacity') {
+      line(1, `= 接入公共电网变压器容量 × 容量电价 = ${inp.greenTransCapacity} × ${inp.std.capPrice} = <span class="calc-num">${fmt(s.capacityCharge)} 元</span>`);
+    } else {
+      const disc = s.hasDiscount ? '（已触发90%优惠：' + inp.std.demPrice + '×0.9=' + fmt(s.appliedDemPrice) + '）' : '（未触发优惠）';
+      line(1, `= 月度最大需量 × 需量电价${disc}`);
+      line(1, `= ${inp.greenMaxDemand} × ${fmt(s.appliedDemPrice || inp.std.demPrice)} = <span class="calc-num">${fmt(s.capacityCharge)} 元</span>`);
+    }
+    line(1, `输配电费小计 = ${fmt(s.tPriceFee)} + ${fmt(s.capacityCharge)} = <span class="calc-num">${fmt(s.transmissionFee)} 元</span>`);
+
+    line(1, `④ 系统运行费 = ${fmt(gridUsage)} × ${inp.systemFee} = <span class="calc-num">${fmt(s.systemFee)} 元</span>`);
+
+    line(1, `⑤ 政府性基金及附加（公网部分）= ${fmt(gridUsage)} × 0.021325 = <span class="calc-num">${fmt(s.govFund)} 元</span>`);
+
+    line(1, `<div class="calc-total" style="margin-top:4px">公网电费小计 = <span class="calc-num">${fmt(s.gridSubtotal)} 元</span></div>`);
+
+    line(0, `<strong>二、自发自用电费</strong>`);
+    line(1, `自发自用购电费 = ${fmt(selfUseUsage)} × ${inp.selfUsePrice} = <span class="calc-num">${fmt(s.selfUsePurchaseFee)} 元</span>`);
+    line(1, `自发自用电政府性基金 = ${fmt(selfUseUsage)} × 0.021325 = <span class="calc-num">${fmt(s.selfUseGovFund)} 元</span>`);
+    line(1, `自发自用电费小计 = <span class="calc-num">${fmt(s.selfUseFee)} 元</span>`);
+
+    line(0, `<div class="calc-total">电费总金额 = ${fmt(s.gridSubtotal)} + ${fmt(s.selfUseFee)} = <span class="calc-num">${fmt(s.total)} 元</span></div>`);
+  }
+
+  return lines.join('');
+}
+
+// ========== 主计算函数 ==========
+function calculate() {
+  const inp = getInputs();
+
+  const s1 = calcScenario1(inp);
+  const s2 = calcScenario2(inp);
+  const s3 = calcScenario3(inp);
+
+  // 汇总卡
+  document.getElementById('total1').textContent = fmt(s1.total);
+  document.getElementById('total2').textContent = fmt(s2.total);
+  document.getElementById('total3').textContent = fmt(s3.total);
+
+  // 判断最低/最高
+  const totals = [
+    { idx: 1, val: s1.total },
+    { idx: 2, val: s2.total },
+    { idx: 3, val: s3.total }
+  ];
+  const minVal = Math.min(...totals.map(t => t.val));
+  const maxVal = Math.max(...totals.map(t => t.val));
+
+  ['card1','card2','card3'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('lowest', 'highest');
+    const tag = el.querySelector('.tag');
+    if (tag) tag.remove();
+  });
+
+  totals.forEach(t => {
+    const card = document.getElementById('card' + t.idx);
+    if (t.val === minVal && minVal !== maxVal) {
+      card.classList.add('lowest');
+      const tag = document.createElement('div');
+      tag.className = 'tag';
+      tag.textContent = '最低成本';
+      card.appendChild(tag);
+    } else if (t.val === maxVal && minVal !== maxVal) {
+      card.classList.add('highest');
+      const tag = document.createElement('div');
+      tag.className = 'tag';
+      tag.textContent = '最高成本';
+      card.appendChild(tag);
+    }
+  });
+
+  // 节省金额
+  totals.forEach(t => {
+    const savingsEl = document.getElementById('savings' + t.idx);
+    if (minVal !== maxVal) {
+      const diff = maxVal - t.val;
+      const pct = maxVal > 0 ? (diff / maxVal * 100) : 0;
+      savingsEl.textContent = diff > 0
+        ? `较最高省 ${fmt(diff)} 元 (${pct.toFixed(1)}%)`
+        : '';
+    } else {
+      savingsEl.textContent = '';
+    }
+  });
+
+  // 中间量
+  const selfUseUsage = inp.totalUsage * inp.selfUseRatio;
+  const gridUsage = inp.totalUsage - selfUseUsage;
+
+  function discountBadge(ok) {
+    return ok
+      ? '<span class="badge active">已触发90%优惠</span>'
+      : '<span class="badge inactive">未触发优惠</span>';
+  }
+
+  document.getElementById('intermediate').innerHTML = `
+    <div class="item">公网电量：<strong>${fmt(gridUsage)}</strong> 千瓦时</div>
+    <div class="item">自发自用电量：<strong>${fmt(selfUseUsage)}</strong> 千瓦时</div>
+    <div class="item">公网模式每kVA用电量：<strong>${s1.perKvaUsage.toFixed(1)}</strong> 千瓦时/千伏安 &nbsp; ${discountBadge(s1.hasDiscount)}</div>
+    <div class="item">绿电模式每kVA用电量：<strong>${s2.perKvaUsage.toFixed(1)}</strong> 千瓦时/千伏安 &nbsp; ${discountBadge(s2.hasDiscount)}</div>
+    ${s1.appliedDemPrice !== null ? `<div class="item">公网模式适用需量电价：<strong>${s1.appliedDemPrice.toFixed(2)}</strong> 元/千瓦·月</div>` : ''}
+    ${s2.appliedDemPrice !== null ? `<div class="item">绿电模式适用需量电价：<strong>${s2.appliedDemPrice.toFixed(2)}</strong> 元/千瓦·月</div>` : ''}
+  `;
+
+  // 分项明细表
+  const rows = [
+    { label: '上网电费', v1: s1.onlineFee, v2: s2.onlineFee, v3: s3.onlineFee },
+    { label: '上网环节线损费', v1: s1.lineLossFee, v2: s2.lineLossFee, v3: s3.lineLossFee },
+    { label: '输配电度电费', v1: s1.tPriceFee, v2: s2.tPriceFee, v3: s3.tPriceFee },
+    { label: '容（需）量电费', v1: s1.capacityCharge, v2: s2.capacityCharge, v3: s3.capacityCharge },
+    { label: '输配电费小计', v1: s1.transmissionFee, v2: s2.transmissionFee, v3: s3.transmissionFee, subtotal: true },
+    { label: '系统运行费', v1: s1.systemFee, v2: s2.systemFee, v3: s3.systemFee },
+    { label: '政府性基金及附加（公网部分）', v1: s1.govFund, v2: s2.govFund, v3: s3.govFund },
+    { label: '公网电费小计', v1: s1.gridSubtotal, v2: s2.gridSubtotal, v3: s3.gridSubtotal, subtotal: true },
+    { label: '自发自用购电费', v1: s1.selfUsePurchaseFee, v2: s2.selfUsePurchaseFee, v3: s3.selfUsePurchaseFee },
+    { label: '自发自用电政府性基金', v1: s1.selfUseGovFund, v2: s2.selfUseGovFund, v3: s3.selfUseGovFund },
+    { label: '自发自用电费小计', v1: s1.selfUseFee, v2: s2.selfUseFee, v3: s3.selfUseFee, subtotal: true },
+    { label: '电费总金额', v1: s1.total, v2: s2.total, v3: s3.total, total: true }
+  ];
+
+  const body = document.getElementById('detailBody');
+  body.innerHTML = rows.map(r => {
+    let cls = r.total ? 'total-row' : (r.subtotal ? 'subtotal-row' : '');
+    if (r.total && s1.total === minVal && minVal !== maxVal) {
+      cls = 'total-row lowest';
+    }
+    return `<tr class="${cls}">
+      <td>${r.label}</td>
+      <td>${fmt(r.v1)}</td>
+      <td>${fmt(r.v2)}</td>
+      <td>${fmt(r.v3)}</td>
+    </tr>`;
+  }).join('');
+
+  // 生成每张卡片的计算过程
+  document.getElementById('calc1').innerHTML = buildCalcDetail(1, inp, s1);
+  document.getElementById('calc2').innerHTML = buildCalcDetail(2, inp, s2);
+  document.getElementById('calc3').innerHTML = buildCalcDetail(3, inp, s3);
+
+  // 绘制柱状图
+  const chartLabels = ['公网单一\n供电模式', '绿电直连\n方式一', '绿电直连\n方式二'];
+  const chartValues = [s1.total / 10000, s2.total / 10000, s3.total / 10000];
+  const unitPrices = [
+    inp.totalUsage > 0 ? s1.total / inp.totalUsage : 0,
+    inp.totalUsage > 0 ? s2.total / inp.totalUsage : 0,
+    inp.totalUsage > 0 ? s3.total / inp.totalUsage : 0
+  ];
+  const chartColors = ['#1a73e8', '#188038', '#e37400'];
+  drawBarChart('chartTotal', chartLabels, chartValues, '万元', chartColors);
+  drawBarChart('chartUnit', chartLabels, unitPrices, '元/千瓦时', chartColors);
+}
+
+// ========== 更新电压等级提示 ==========
+function updateStandards() {
+  const v = parseInt(document.getElementById('voltage').value);
+  const std = VOLTAGE_STANDARDS[v];
+  const vName = v >= 220 ? '220千伏及以上' : v + '千伏';
+  document.getElementById('voltageHint').textContent =
+    `${vName}：度电价${std.tPrice}元/kWh，容量${std.capPrice}元/kVA·月，需量${std.demPrice}元/kW·月`;
+  calculate();
+}
+
+// 初始化
+updateStandards();
+calculate();
+</script>
+
+<div style="text-align:center; padding:16px; font-size:0.8rem; color:#999;">
+  ©2026 国网银川供电公司营销部 赵海峰
+</div>
+
+</body>
+</html>
