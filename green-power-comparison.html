@@ -366,7 +366,7 @@ body {
 
 <div class="header">
   <h1>公网单一供电模式 vs 绿电直连模式用电成本测算比对工具</h1>
-  <p>基于宁夏第三监管周期输配电价标准 · 实时计算</p>
+  <p>基于宁夏第四监管周期输配电价标准 · 实时计算</p>
 </div>
 
 <div class="container">
@@ -520,7 +520,7 @@ body {
 
     <!-- 参数参考 -->
     <div class="reference-section">
-      <h3>📐 宁夏输配电价标准参考（第三监管周期）</h3>
+      <h3>📐 宁夏输配电价标准参考（第四监管周期）</h3>
       <table>
         <thead>
           <tr>
@@ -531,14 +531,14 @@ body {
           </tr>
         </thead>
         <tbody>
-          <tr><td>10千伏</td><td>0.092</td><td>18</td><td>28.8</td></tr>
-          <tr><td>35千伏</td><td>0.0769</td><td>18</td><td>28.8</td></tr>
-          <tr><td>110千伏</td><td>0.06</td><td>16</td><td>25.6</td></tr>
-          <tr><td>220千伏及以上</td><td>0.0521</td><td>16</td><td>25.6</td></tr>
+          <tr><td>10千伏</td><td>0.0903</td><td>18</td><td>28.8</td></tr>
+          <tr><td>35千伏</td><td>0.0749</td><td>18</td><td>28.8</td></tr>
+          <tr><td>110千伏</td><td>0.0567</td><td>16</td><td>25.6</td></tr>
+          <tr><td>220千伏及以上</td><td>0.0491</td><td>16</td><td>25.6</td></tr>
         </tbody>
       </table>
       <div class="note">
-        <strong>其他固定参数：</strong>上网环节线损率 2.59%；政府性基金及附加 0.021325 元/千瓦时；平均负荷率 66.38%（方式一专用）；730小时（方式一专用）。<br>
+        <strong>其他固定参数：</strong>省内上网环节线损率 2.58%；政府性基金及附加 0.021325 元/千瓦时；平均负荷率 66.38%（方式一专用）；730小时（方式一专用）。<br>
         <strong>需量电价优惠：</strong>若每月每千伏安用电量超过260千瓦时，需量电价按标准的90%计收。<br>
         &nbsp;&nbsp;· 公网模式：每千伏安用电量 = 月度用电量 ÷ 变压器容量<br>
         &nbsp;&nbsp;· 绿电直连模式：每千伏安用电量 = 公网电量 ÷ 接入公共电网变压器容量<br>
@@ -554,13 +554,13 @@ body {
 <script>
 // ========== 宁夏标准参数 ==========
 const VOLTAGE_STANDARDS = {
-  10:  { tPrice: 0.092,  capPrice: 18, demPrice: 28.8 },
-  35:  { tPrice: 0.0769, capPrice: 18, demPrice: 28.8 },
-  110: { tPrice: 0.06,   capPrice: 16, demPrice: 25.6 },
-  220: { tPrice: 0.0521, capPrice: 16, demPrice: 25.6 }
+  10:  { tPrice: 0.0903, capPrice: 18, demPrice: 28.8 },
+  35:  { tPrice: 0.0749, capPrice: 18, demPrice: 28.8 },
+  110: { tPrice: 0.0567, capPrice: 16, demPrice: 25.6 },
+  220: { tPrice: 0.0491, capPrice: 16, demPrice: 25.6 }
 };
 
-const LINE_LOSS_RATE = 0.0259;
+const LINE_LOSS_RATE = 0.0258;
 const GOV_FUND = 0.021325;
 const AVG_LOAD_RATE = 0.6638;
 const HOURS_730 = 730;
@@ -886,8 +886,8 @@ function buildCalcDetail(mode, inp, s) {
     line(1, `用电量 × 上网电价 = ${fmt(usage)} × ${inp.gridPrice} = <span class="calc-num">${fmt(s.onlineFee)} 元</span>`);
 
     line(0, `<strong>二、上网环节线损费</strong>`);
-    line(1, `用电量 × 上网电价 / (1-2.59%) × 2.59%`);
-    line(1, `= ${fmt(usage)} × ${inp.gridPrice} / 0.9741 × 0.0259 = <span class="calc-num">${fmt(s.lineLossFee)} 元</span>`);
+    line(1, `用电量 × 上网电价 / (1-2.58%) × 2.58%`);
+    line(1, `= ${fmt(usage)} × ${inp.gridPrice} / 0.9742 × 0.0258 = <span class="calc-num">${fmt(s.lineLossFee)} 元</span>`);
 
     line(0, `<strong>三、输配电费</strong>`);
     line(1, `① 输配电度电费 = 用电量 × 度电价 = ${fmt(usage)} × ${inp.std.tPrice} = <span class="calc-num">${fmt(s.tPriceFee)} 元</span>`);
@@ -927,7 +927,7 @@ function buildCalcDetail(mode, inp, s) {
     line(1, `① 上网电费 = ${fmt(gridUsage)} × ${inp.gridPrice} = <span class="calc-num">${fmt(s.onlineFee)} 元</span>`);
 
     line(1, `② 上网环节线损费`);
-    line(1, `= ${fmt(gridUsage)} × ${inp.gridPrice} / 0.9741 × 0.0259 = <span class="calc-num">${fmt(s.lineLossFee)} 元</span>`);
+    line(1, `= ${fmt(gridUsage)} × ${inp.gridPrice} / 0.9742 × 0.0258 = <span class="calc-num">${fmt(s.lineLossFee)} 元</span>`);
 
     line(1, `③ 输配电费`);
     if (mode === 2) {
